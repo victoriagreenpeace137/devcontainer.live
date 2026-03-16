@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  /* Dynamic Theme Variable Mappings */
+  --color-ide-bg: var(--theme-bg);
+  --color-ide-sidebar: var(--theme-sidebar);
+  --color-ide-activity: var(--theme-activity);
+  --color-ide-border: var(--theme-border);
+  --color-ide-accent: var(--theme-accent);
+  --color-ide-accent-muted: var(--theme-accent-muted);
+
+  --color-ide-cyan: var(--theme-cyan);
+  --color-ide-purple: var(--theme-purple);
+  --color-ide-orange: var(--theme-orange);
+  --color-ide-green: var(--theme-green);
+  --color-ide-red: var(--theme-red);
+
+  --color-ide-text: var(--theme-text);
+  --color-ide-text-muted: var(--theme-text-muted);
+  --color-ide-text-bright: var(--theme-text-bright);
+
+  --font-sans: "Geist", ui-sans-serif, system-ui;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular;
+}
+
+:root {
+  /* Default: Midnight */
+  --theme-bg: #0b0e14;
+  --theme-sidebar: #010409;
+  --theme-activity: #010409;
+  --theme-border: #30363d;
+  --theme-accent: #58a6ff;
+  --theme-accent-muted: rgba(88, 166, 255, 0.1);
+  --theme-cyan: #39c5bb;
+  --theme-purple: #bc8fef;
+  --theme-orange: #f0883e;
+  --theme-green: #3fb950;
+  --theme-red: #f85149;
+  --theme-text: #c9d1d9;
+  --theme-text-muted: #8b949e;
+  --theme-text-bright: #ffffff;
+}
+
+.theme-dracula {
+  --theme-bg: #282a36;
+  --theme-sidebar: #21222c;
+  --theme-activity: #191a21;
+  --theme-border: #44475a;
+  --theme-accent: #bd93f9;
+  --theme-accent-muted: rgba(189, 147, 249, 0.1);
+  --theme-cyan: #8be9fd;
+  --theme-purple: #ff79c6;
+  --theme-orange: #ffb86c;
+  --theme-green: #50fa7b;
+  --theme-red: #ff5555;
+  --theme-text: #f8f8f2;
+  --theme-text-muted: #6272a4;
+  --theme-text-bright: #ffffff;
+}
+
+.theme-nord {
+  --theme-bg: #2e3440;
+  --theme-sidebar: #242933;
+  --theme-activity: #1f232b;
+  --theme-border: #3b4252;
+  --theme-accent: #88c0d0;
+  --theme-accent-muted: rgba(136, 192, 208, 0.1);
+  --theme-cyan: #8fbcbb;
+  --theme-purple: #b48ead;
+  --theme-orange: #d08770;
+  --theme-green: #a3be8c;
+  --theme-red: #bf616a;
+  --theme-text: #d8dee9;
+  --theme-text-muted: #4c566a;
+  --theme-text-bright: #eceff4;
+}
+
+.theme-solarized-light {
+  --theme-bg: #fdf6e3;
+  --theme-sidebar: #eee8d5;
+  --theme-activity: #eee8d5;
+  --theme-border: #d5ccba;
+  --theme-accent: #268bd2;
+  --theme-accent-muted: rgba(38, 139, 210, 0.1);
+  --theme-cyan: #2aa198;
+  --theme-purple: #6c71c4;
+  --theme-orange: #cb4b16;
+  --theme-green: #859900;
+  --theme-red: #dc322f;
+  --theme-text: #586e75;
+  --theme-text-muted: #657b83;
+  --theme-text-bright: #073642;
+}
+
+@layer base {
+  body {
+    @apply bg-ide-bg text-ide-text antialiased font-sans transition-colors duration-300;
+    margin: 0;
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .ide-border {
+    @apply border-ide-border;
+  }
+  .ide-panel {
+    @apply bg-ide-bg border-ide-border;
+  }
+  .ide-button {
+    @apply px-3 py-1.5 rounded-md text-[11px] font-bold transition-all disabled:opacity-50;
+  }
+  .ide-input {
+    @apply bg-ide-bg border border-ide-border rounded px-3 py-1.5 text-[11px] font-mono 
+    focus:border-ide-accent focus:ring-1 focus:ring-ide-accent/20 outline-none transition-all 
+    placeholder:text-ide-text-muted/60;
+  }
+  .activity-item {
+    @apply w-12 h-12 flex items-center justify-center transition-all cursor-pointer relative;
+  }
+  .activity-item.active::before {
+    content: "";
+    @apply absolute left-0 top-2 bottom-2 w-1 bg-ide-accent rounded-r;
+  }
+  .tab-item {
+    @apply px-4 py-2 text-[11px] font-bold border-r border-ide-border flex items-center gap-2 cursor-pointer transition-colors;
+  }
+  .tab-item.active {
+    @apply bg-ide-bg text-ide-text-bright border-t-2 border-t-ide-accent;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--theme-sidebar);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border: 2px solid var(--theme-sidebar);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-accent);
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(var(--theme-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--theme-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.1;
+}

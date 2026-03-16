@@ -1,0 +1,190 @@
+import { ref, computed, reactive, watch, nextTick } from "vue";
+import imageTagsJson from "../data/imageTags.json";
+
+const imageTags = imageTagsJson as Record<string, string[]>;
+
+const commonImages = [
+  "devcontainers/python",
+  "devcontainers/ruby",
+  "devcontainers/cpp",
+  "devcontainers/go",
+  "devcontainers/base",
+  "devcontainers/php",
+  "devcontainers/typescript-node",
+  "devcontainers/javascript-node",
+  "devcontainers/jekyll",
+  "devcontainers/universal",
+  "devcontainers/anaconda",
+  "devcontainers/miniconda",
+  "devcontainers/rust",
+  "devcontainers/dotnet",
+  "devcontainers/java",
+];
+
+const MCR_PREFIX = "mcr.microsoft.com/";
+
+export function useImageAutocomplete(
+  imageRef: { value: string | undefined },
+  onSelect: (img: string) => void,
+) {
+  const tagsCache = reactive<Record<string, string[]>>({ ...imageTags });
+  const isLoadingTags = ref(false);
+  const showImageSuggestions = ref(false);
+  const selectedIndex = ref(-1);
+  const dropdownRef = ref<HTMLElement | null>(null);
+  const suggestionItems = ref<HTMLElement[]>([]);
+
+  const filteredImages = computed(() => {
+    const input = imageRef.value || "";
+    const search = input.toLowerCase();
+
+    if (search.startsWith(MCR_PREFIX)) {
+      const withoutPrefix = input.substring(MCR_PREFIX.length);
+      const [baseImage, tagPart] = withoutPrefix.split(":");
+
+      if (tagPart !== undefined) {
+        const tags = tagsCache[baseImage] || [];
+        const tagSearch = tagPart.toLowerCase();
+        return tags
+          .filter((tag) => tag.toLowerCase().includes(tagSearch))
+          .map((tag) => `${MCR_PREFIX}${baseImage}:${tag}`)
+          .slice(0, 100);
+      }
+
+      return commonImages
+        .filter((img) =>
+          img.toLowerCase().includes(withoutPrefix.toLowerCase()),
+        )
+        .map((img) => `${MCR_PREFIX}${img}`);
+    }
+
+    if (!search) return commonImages.map((img) => `${MCR_PREFIX}${img}`);
+
+    return commonImages
+      .map((img) => `${MCR_PREFIX}${img}`)
+      .filter((img) => img.toLowerCase().includes(search));
+  });
+
+  async function fetchTags(baseImage: string) {
+    if (tagsCache[baseImage] || isLoadingTags.value) return;
+
+    isLoadingTags.value = true;
+    try {
+      const response = await fetch(
+        `https://mcr.microsoft.com/v2/${baseImage}/tags/list`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        tagsCache[baseImage] = data.tags.reverse();
+      }
+    } catch (err) {
+      console.error(`Failed to fetch tags for ${baseImage}`, err);
+    } finally {
+      isLoadingTags.value = false;
+    }
+  }
+
+  watch(
+    () => imageRef.value,
+    (newVal) => {
+      if (!newVal) return;
+      if (newVal.startsWith(MCR_PREFIX)) {
+        const withoutPrefix = newVal.substring(MCR_PREFIX.length);
+        const [baseImage] = withoutPrefix.split(":");
+        if (
+          commonImages.includes(baseImage) ||
+          (withoutPrefix.includes(":") && !tagsCache[baseImage])
+        ) {
+          fetchTags(baseImage);
+        }
+      }
+    },
+    { immediate: true },
+  );
+
+  watch(filteredImages, () => {
+    selectedIndex.value = -1;
+  });
+
+  watch(selectedIndex, async (newIndex) => {
+    if (newIndex >= 0) {
+      await nextTick();
+      const activeItem = suggestionItems.value[newIndex];
+      const container = dropdownRef.value;
+
+      if (activeItem && container) {
+        const itemTop = activeItem.offsetTop;
+        const itemBottom = itemTop + activeItem.offsetHeight;
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.offsetHeight;
+
+        if (itemTop < containerTop) {
+          container.scrollTop = itemTop;
+        } else if (itemBottom > containerBottom) {
+          container.scrollTop = itemBottom - container.offsetHeight;
+        }
+      }
+    }
+  });
+
+  function selectImage(img: string) {
+    onSelect(img);
+    if (!img.includes(":")) {
+      showImageSuggestions.value = true;
+      selectedIndex.value = -1;
+    } else {
+      showImageSuggestions.value = false;
+      selectedIndex.value = -1;
+    }
+  }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    if (!showImageSuggestions.value) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        showImageSuggestions.value = true;
+      }
+      return;
+    }
+
+    const listLength = filteredImages.value.length;
+    if (listLength === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        selectedIndex.value = (selectedIndex.value + 1) % listLength;
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        selectedIndex.value =
+          (selectedIndex.value - 1 + listLength) % listLength;
+        break;
+      case "Enter":
+        if (selectedIndex.value >= 0 && selectedIndex.value < listLength) {
+          e.preventDefault();
+          selectImage(filteredImages.value[selectedIndex.value]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        showImageSuggestions.value = false;
+        selectedIndex.value = -1;
+        break;
+    }
+  }
+
+  const setItemRef = (el: any, i: number) => {
+    if (el) suggestionItems.value[i] = el;
+  };
+
+  return {
+    filteredImages,
+    isLoadingTags,
+    showImageSuggestions,
+    selectedIndex,
+    dropdownRef,
+    setItemRef,
+    selectImage,
+    handleKeyDown,
+  };
+}
