@@ -59,7 +59,13 @@ export function useGenerator() {
   const state = ref<{
     orchestration: OrchestrationType;
     config: DevContainerConfig;
-  }>(JSON.parse(JSON.stringify(parsed?.state || DEFAULT_STATE)));
+  }>(
+    JSON.parse(
+      JSON.stringify(
+        parsed?.state?.config ? parsed.state : DEFAULT_STATE,
+      ),
+    ),
+  );
 
   const indentation = ref(parsed?.indentation ?? -1);
 
@@ -88,7 +94,7 @@ export function useGenerator() {
   }
 
   const generatedJson = computed(() => {
-    const config: any = JSON.parse(JSON.stringify(state.value.config));
+    const config: any = JSON.parse(JSON.stringify(state.value.config || DEFAULT_STATE.config));
     const orchestration = state.value.orchestration;
 
     // Grouping Dockerfile properties
