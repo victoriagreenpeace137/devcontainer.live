@@ -13,6 +13,10 @@ const emit = defineEmits<{
 
 const imageRef = toRef(props, "image");
 
+const autocomplete = useImageAutocomplete(imageRef, (img) => {
+  emit("update:image", img);
+});
+
 const {
   filteredImages,
   isLoadingTags,
@@ -22,9 +26,10 @@ const {
   setItemRef,
   selectImage,
   handleKeyDown,
-} = useImageAutocomplete(imageRef, (img) => {
-  emit("update:image", img);
-});
+} = autocomplete;
+
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+dropdownRef;
 </script>
 
 <template>

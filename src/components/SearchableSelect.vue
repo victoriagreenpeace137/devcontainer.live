@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-
-type OptionGetter = () => { value: string; label?: string }[];
+import { ref, computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
