@@ -307,10 +307,12 @@ function updateFeatureOption(featureId: string, optionKey: string, value: any) {
                     String(selectedFeatures[feature.id][key] ?? opt.default)
                   "
                   :options="
-                    (opt.enum || opt.proposals).map((val: string | number) => ({
-                      value: String(val),
-                      label: String(val),
-                    }))
+                    (opt.enum || opt.proposals || []).map(
+                      (val: string | number) => ({
+                        value: String(val),
+                        label: String(val),
+                      }),
+                    )
                   "
                   @update:model-value="
                     updateFeatureOption(feature.id, key, $event)

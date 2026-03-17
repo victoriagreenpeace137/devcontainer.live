@@ -259,7 +259,8 @@ function removeVscodeSetting(key: string) {
           <div class="space-y-2">
             <template v-if="config.customizations?.vscode?.settings">
               <div
-                v-for="(value, key, index) in config.customizations.vscode.settings"
+                v-for="(value, key, index) in config.customizations.vscode
+                  .settings"
                 :key="index"
                 class="grid grid-cols-[1fr_1fr_auto] gap-2 items-center"
               >
