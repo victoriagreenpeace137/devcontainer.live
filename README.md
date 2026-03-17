@@ -1,5 +1,36 @@
-# Vue 3 + TypeScript + Vite
+# devcontainer.live
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+![devcontainer.live](public/logo.png)
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+Source code for https://devcontainer.live
+
+## Build and Run Locally
+
+### Prerequisites
+- [Bun](https://bun.sh/)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/drehelis/devcontainer.live
+cd devcontainer.live
+```
+
+2. Install dependencies:
+```bash
+bun install
+```
+
+### Development
+
+Run the development server:
+```bash
+bun run dev
+```
+
+The app will be available at `http://localhost:5173`
+
+## License
+
+This project is licensed under the MIT License.
