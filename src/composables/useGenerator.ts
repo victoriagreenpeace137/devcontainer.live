@@ -63,8 +63,12 @@ export function useGenerator() {
 
     // Grouping Dockerfile properties
     if (orchestration === "dockerfile") {
+      const dockerfilePath =
+        config.build?.dockerfile || config.build?.dockerFile || "Dockerfile";
+      const isCamelCase = !!config.build?.dockerFile && !config.build?.dockerfile;
+
       config.build = {
-        dockerfile: config.build?.dockerfile || "Dockerfile",
+        [isCamelCase ? "dockerFile" : "dockerfile"]: dockerfilePath,
         context: config.build?.context || ".",
         ...(config.build?.args && Object.keys(config.build.args).length > 0
           ? { args: config.build.args }
@@ -118,7 +122,7 @@ export function useGenerator() {
     if (config.appPort) cleanConfig.appPort = config.appPort;
     if (config.remoteUser) cleanConfig.remoteUser = config.remoteUser;
     if (config.containerUser) cleanConfig.containerUser = config.containerUser;
-    if (config.updateRemoteUserUID !== undefined)
+    if (config.updateRemoteUserUID)
       cleanConfig.updateRemoteUserUID = config.updateRemoteUserUID;
     if (config.userEnvProbe) cleanConfig.userEnvProbe = config.userEnvProbe;
     if (config.waitFor) cleanConfig.waitFor = config.waitFor;

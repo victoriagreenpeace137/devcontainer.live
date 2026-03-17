@@ -119,8 +119,8 @@ function handleUpdateArg(oldKey: string, newKey: string, value: any) {
       </div>
       <div class="space-y-1">
         <div
-          v-for="(val, key) in build?.args || {}"
-          :key="key"
+          v-for="(val, key, i) in build?.args || {}"
+          :key="i"
           class="grid grid-cols-[1fr_1fr_auto] gap-1"
         >
           <input

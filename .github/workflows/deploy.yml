@@ -2,13 +2,9 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/**'
-      - README.md
-      - LICENSE
+  release:
+    types:
+      - published
 
 permissions:
   contents: read

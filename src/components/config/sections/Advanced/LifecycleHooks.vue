@@ -131,11 +131,11 @@ function getHookValue(key: HookKey) {
 
         <div v-else class="space-y-2 border-l border-ide-accent/20 pl-4">
           <div
-            v-for="(cmd, subKey) in getHookValue(hook.key) as Record<
+            v-for="(cmd, subKey, i) in getHookValue(hook.key) as Record<
               string,
               string
             >"
-            :key="subKey"
+            :key="i"
             class="flex gap-2"
           >
             <input

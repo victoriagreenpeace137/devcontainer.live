@@ -163,8 +163,8 @@ function removeEnvVar(path: "containerEnv" | "remoteEnv", key: string) {
         </div>
         <div class="space-y-1">
           <div
-            v-for="(value, key) in config.containerEnv"
-            :key="key"
+            v-for="(value, key, i) in config.containerEnv"
+            :key="i"
             class="grid grid-cols-[1fr_1fr_auto] gap-1"
           >
             <input
@@ -243,8 +243,8 @@ function removeEnvVar(path: "containerEnv" | "remoteEnv", key: string) {
         </div>
         <div class="space-y-1">
           <div
-            v-for="(value, key) in config.remoteEnv"
-            :key="key"
+            v-for="(value, key, i) in config.remoteEnv"
+            :key="i"
             class="grid grid-cols-[1fr_1fr_auto] gap-1"
           >
             <input
