@@ -62,7 +62,7 @@ function handleCursorUpdate(pos: { line: number; col: number }) {
         >
           Configuration
         </header>
-        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar">
           <ConfigForm v-model="state" :activeSection="activeSection" />
         </div>
 
