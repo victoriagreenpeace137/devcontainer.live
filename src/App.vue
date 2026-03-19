@@ -13,15 +13,25 @@ import MobileSectionNav from "./components/layout/MobileSectionNav.vue";
 import StatusBar from "./components/layout/StatusBar.vue";
 import EditorTabs from "./components/layout/EditorTabs.vue";
 import { useResponsive } from "./composables/useResponsive";
+import IndentationPicker from "./components/layout/IndentationPicker.vue";
+import PresetsGallery from "./components/presets/PresetsGallery.vue";
 
 const {
   state,
   generatedJson,
+  allFiles,
   bashHistoryNote,
   indentation,
-  reset,
+  reset: resetGenerator,
   getShareUrl,
 } = useGenerator();
+
+const activeFile = ref("devcontainer.json");
+
+function reset() {
+  resetGenerator();
+  activeFile.value = "devcontainer.json";
+}
 const { currentTheme } = useTheme();
 const { sidebarWidth, startResizing } = useSidebarResize();
 const {
@@ -31,20 +41,32 @@ const {
   copyToClipboard,
   copyShareLink,
   downloadConfig,
-} = useEditorActions(generatedJson, reset, getShareUrl);
+} = useEditorActions(allFiles, activeFile, reset, getShareUrl);
 
 const { isMobile } = useResponsive();
 const activeView = ref<"config" | "preview">("config");
 
 const activeSection = ref<
-  "general" | "features" | "ports" | "history" | "advanced"
->("general");
+  "general" | "features" | "ports" | "history" | "advanced" | "presets"
+>("presets");
 
-const indentOptions = [
-  { id: "2", name: "Spaces: 2", value: 2 },
-  { id: "4", name: "Spaces: 4", value: 4 },
-  { id: "tabs", name: "Tabs", value: -1 },
-];
+function handleApplyPreset(payload: any) {
+  state.value.orchestration = payload.orchestration;
+  state.value.config = {
+    ...state.value.config,
+    ...JSON.parse(JSON.stringify(payload.config)),
+  };
+
+  // Store additional files if they exist
+  const presetFiles: Record<string, string> = {};
+  if (payload.dockerfile) presetFiles["Dockerfile"] = payload.dockerfile;
+  if (payload.dockerCompose)
+    presetFiles["docker-compose.yml"] = payload.dockerCompose;
+  state.value.presetFiles = presetFiles;
+
+  activeFile.value = "devcontainer.json";
+  activeSection.value = "general";
+}
 
 onMounted(() => {
   window.addEventListener("click", (e) => {
@@ -87,10 +109,14 @@ function handleCursorUpdate(pos: { line: number; col: number }) {
         >
           Configuration
         </header>
-        <div
-          class="flex-1 overflow-y-auto overflow-x-hidden p-4 custom-scrollbar lg:pt-4 pt-2"
-        >
-          <ConfigForm v-model="state" :activeSection="activeSection" />
+        <div class="flex-1 overflow-x-hidden flex flex-col custom-scrollbar">
+          <div class="p-4 lg:pt-4 pt-2 flex-1 flex flex-col min-h-0">
+            <PresetsGallery
+              v-if="activeSection === 'presets'"
+              @apply="handleApplyPreset"
+            />
+            <ConfigForm v-else v-model="state" :activeSection="activeSection" />
+          </div>
         </div>
 
         <!-- Resize Handle (Hidden on Mobile) -->
@@ -109,6 +135,8 @@ function handleCursorUpdate(pos: { line: number; col: number }) {
         <div class="absolute inset-0 grid-overlay pointer-events-none"></div>
 
         <EditorTabs
+          :files="Object.keys(allFiles)"
+          v-model:active-file="activeFile"
           :copy-status="copyStatus"
           :share-status="shareStatus"
           @copy="copyToClipboard"
@@ -121,8 +149,11 @@ function handleCursorUpdate(pos: { line: number; col: number }) {
           class="flex-1 overflow-auto bg-ide-bg p-4 lg:p-8 font-mono custom-scrollbar z-10 transition-colors duration-300"
         >
           <CodePreview
-            :code="generatedJson"
-            :bash-history-note="bashHistoryNote"
+            :code="allFiles[activeFile]?.content || ''"
+            :language="allFiles[activeFile]?.language || 'json'"
+            :bash-history-note="
+              activeFile === 'devcontainer.json' ? bashHistoryNote : undefined
+            "
             :indentation="indentation"
             @update:cursor="handleCursorUpdate"
           />
@@ -138,43 +169,15 @@ function handleCursorUpdate(pos: { line: number; col: number }) {
       :version="pkgVersion"
       :cursor-pos="cursorPos"
       v-model:indentation="indentation"
+      :indent-editable="activeFile === 'devcontainer.json'"
       @toggle-indent-menu="showIndentMenu = !showIndentMenu"
     >
       <template #indent-menu>
-        <div
+        <IndentationPicker
           v-if="showIndentMenu"
-          class="absolute bottom-full right-0 mb-2 w-32 bg-ide-sidebar border border-ide-border rounded-lg shadow-2xl z-[100] overflow-hidden"
-        >
-          <div
-            v-for="opt in indentOptions"
-            :key="opt.id"
-            @click="
-              indentation = opt.value;
-              showIndentMenu = false;
-            "
-            class="px-4 py-2 hover:bg-ide-accent/10 hover:text-ide-accent cursor-pointer transition-colors flex items-center justify-between"
-            :class="{
-              'bg-ide-accent/5 text-ide-accent font-black':
-                indentation === opt.value,
-            }"
-          >
-            <span>{{ opt.name }}</span>
-            <svg
-              v-if="indentation === opt.value"
-              class="w-3 h-3 text-ide-accent"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="3"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-        </div>
+          v-model="indentation"
+          @close="showIndentMenu = false"
+        />
       </template>
     </StatusBar>
   </div>

@@ -1,26 +1,68 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
+import type { ThemedToken } from "shiki";
+import { useShiki } from "../composables/useShiki";
 
 const props = defineProps<{
   code: string;
+  language: string;
   bashHistoryNote?: string;
   indentation: number;
 }>();
 
-const emit = defineEmits(["update:cursor"]);
+const emit = defineEmits<{
+  (e: "update:cursor", pos: { line: number; col: number }): void;
+}>();
+
+const { highlightCode } = useShiki();
 
 const activeLine = ref(0);
 const activeCol = ref(0);
-
 const lines = ref<string[]>([]);
+const highlightedLines = ref<ThemedToken[][]>([]);
+
+// Rough width of a character in Geist Mono text-[13px]
+const CHAR_WIDTH = 7.8;
 
 watch(
-  () => props.code,
-  (newCode) => {
+  [() => props.code, () => props.language],
+  async ([newCode, newLang]) => {
     lines.value = newCode.split("\n");
+    await renderHighlightedCode(newCode, newLang);
   },
   { immediate: true },
 );
+
+async function renderHighlightedCode(code: string, lang: string) {
+  const result = await highlightCode(code, lang as any);
+
+  // Process tokens to remove leading whitespace that we render separately as visualizers
+  highlightedLines.value = result.map((lineTokens, i) => {
+    const lineText = lines.value[i] || "";
+    const { leading } = getLineStructure(lineText);
+    const leadingLen = leading.length;
+
+    if (leadingLen === 0) return lineTokens;
+
+    let currentLen = 0;
+    const newTokens: ThemedToken[] = [];
+
+    for (const token of lineTokens) {
+      if (currentLen >= leadingLen) {
+        newTokens.push(token);
+      } else if (currentLen + token.content.length > leadingLen) {
+        newTokens.push({
+          ...token,
+          content: token.content.slice(leadingLen - currentLen),
+        });
+        currentLen = leadingLen;
+      } else {
+        currentLen += token.content.length;
+      }
+    }
+    return newTokens;
+  });
+}
 
 function getLineStructure(line: string) {
   const match = line.match(/^(\s*)(.*)$/);
@@ -42,23 +84,21 @@ function updateCursor(line: number, col: number) {
   });
 }
 
-function handleLineClick(lineIndex: number, event: MouseEvent) {
-  // Rough estimation of column based on click position relative to the code content
+const handleLineClick = (lineIndex: number, event: MouseEvent) => {
   const codeSpan = (event.currentTarget as HTMLElement).querySelector(
     ".code-content",
   );
   if (codeSpan) {
     const rect = codeSpan.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
-    const charWidth = 7.8; // Approximate width of a monospace character at 13px
-    const col = Math.round(clickX / charWidth);
+    const col = Math.round(clickX / CHAR_WIDTH);
     updateCursor(lineIndex, col);
   } else {
     updateCursor(lineIndex, 0);
   }
-}
+};
 
-function handleKeyDown(e: KeyboardEvent) {
+const handleKeyDown = (e: KeyboardEvent) => {
   if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
     e.preventDefault();
 
@@ -70,11 +110,11 @@ function handleKeyDown(e: KeyboardEvent) {
       if (activeCol.value > 0) {
         updateCursor(activeLine.value, activeCol.value - 1);
       } else if (activeLine.value > 0) {
-        const prevLineLen = lines.value[activeLine.value - 1].length;
+        const prevLineLen = lines.value[activeLine.value - 1]?.length || 0;
         updateCursor(activeLine.value - 1, prevLineLen);
       }
     } else if (e.key === "ArrowRight") {
-      const currentLineLen = lines.value[activeLine.value].length;
+      const currentLineLen = lines.value[activeLine.value]?.length || 0;
       if (activeCol.value < currentLineLen) {
         updateCursor(activeLine.value, activeCol.value + 1);
       } else if (activeLine.value < lines.value.length - 1) {
@@ -82,7 +122,7 @@ function handleKeyDown(e: KeyboardEvent) {
       }
     }
   }
-}
+};
 
 onMounted(() => {
   updateCursor(0, 0);
@@ -94,6 +134,7 @@ onMounted(() => {
     class="font-mono text-[13px] leading-6 selection:bg-ide-accent/20 h-full w-full outline-none focus:ring-0"
     tabindex="0"
     @keydown="handleKeyDown"
+    style="tab-size: 4"
   >
     <div
       v-if="bashHistoryNote"
@@ -131,46 +172,54 @@ onMounted(() => {
         >
           <!-- Indentation Visualizers -->
           <div class="flex shrink-0">
-            <template v-if="indentation > 0">
+            <template
+              v-for="(char, i) in getLineStructure(line).leading"
+              :key="i"
+            >
+              <!-- Tab handler -->
               <span
-                v-for="i in Math.floor(
-                  getLineStructure(line).leading.length / indentation,
-                )"
-                :key="i"
-                class="inline-block opacity-10 select-none pointer-events-none text-ide-text-bright"
-                :style="{ width: indentation * 7.8 + 'px' }"
-                >·</span
-              >
-            </template>
-            <template v-else-if="indentation === -1">
-              <span
-                v-for="i in getLineStructure(line).leading.length"
-                :key="i"
+                v-if="char === '\t'"
                 class="inline-block opacity-10 select-none pointer-events-none border-l border-ide-text-bright"
-                :style="{ width: '31.2px' }"
+                :style="{ width: 4 * CHAR_WIDTH + 'px' }"
                 >&nbsp;</span
+              >
+              <!-- Space handler - only render visualizer for the beginning of an indent block -->
+              <span
+                v-else-if="char === ' '"
+                class="inline-block opacity-10 select-none pointer-events-none text-ide-text-bright text-center"
+                :style="{ width: CHAR_WIDTH + 'px' }"
+                >·</span
               >
             </template>
           </div>
 
-          <!-- Actual Code -->
+          <!-- Actual Code (Shiki Highlighted) -->
           <div class="flex-1">
-            <span
-              v-for="(part, pIndex) in highlight(
-                getLineStructure(line).content,
-              )"
-              :key="pIndex"
-              :class="part.class"
-            >
-              {{ part.text }}
-            </span>
+            <template v-if="highlightedLines[index]">
+              <span
+                v-for="(token, tIndex) in highlightedLines[index]"
+                :key="tIndex"
+                :style="{ color: token.color }"
+                :class="{
+                  'font-bold': token.fontStyle === 1,
+                  italic: token.fontStyle === 2,
+                  underline: token.fontStyle === 4,
+                }"
+                >{{ token.content }}</span
+              >
+            </template>
+            <template v-else>
+              <span class="text-ide-text">{{
+                getLineStructure(line).content
+              }}</span>
+            </template>
           </div>
 
           <!-- Virtual Cursor -->
           <div
             v-if="activeLine === index"
             class="absolute top-0 bottom-0 w-[2px] bg-ide-accent animate-pulse pointer-events-none"
-            :style="{ left: activeCol * 7.8 + 'px' }"
+            :style="{ left: activeCol * CHAR_WIDTH + 'px' }"
           ></div>
         </div>
       </div>
@@ -178,52 +227,18 @@ onMounted(() => {
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  methods: {
-    highlight(text: string) {
-      if (!text.trim()) return [{ text: "", class: "" }];
-
-      const parts: { text: string; class: string }[] = [];
-      const jsonRegex = /(".*?")(?:\s*:)?|(\d+)|true|false|null|[{}[\],]/g;
-      let lastIndex = 0;
-      let match;
-
-      while ((match = jsonRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push({
-            text: text.substring(lastIndex, match.index),
-            class: "text-ide-text",
-          });
-        }
-
-        const value = match[0];
-        let className = "text-ide-text";
-
-        if (value.startsWith('"')) {
-          if (text[match.index + value.length] === ":") {
-            className = "text-ide-accent font-black"; // Key
-          } else {
-            className = "text-ide-orange"; // String Value
-          }
-        } else if (!isNaN(Number(value))) {
-          className = "text-ide-purple"; // Number
-        } else if (["true", "false", "null"].includes(value)) {
-          className = "text-ide-green font-bold"; // Boolean/Null
-        } else if (["{", "}", "[", "]", ",", ":"].includes(value)) {
-          className = "text-ide-text-muted/50"; // Punctuation
-        }
-
-        parts.push({ text: value, class: className });
-        lastIndex = match.index + value.length;
-      }
-
-      if (lastIndex < text.length) {
-        parts.push({ text: text.substring(lastIndex), class: "text-ide-text" });
-      }
-
-      return parts;
-    },
-  },
-};
-</script>
+<style scoped>
+:global(:root, [class*="theme-"]) {
+  --shiki-foreground: var(--theme-text);
+  --shiki-background: transparent;
+  --shiki-token-constant: var(--theme-purple);
+  --shiki-token-string: var(--theme-orange);
+  --shiki-token-comment: var(--theme-text-muted);
+  --shiki-token-keyword: var(--theme-purple);
+  --shiki-token-parameter: var(--theme-cyan);
+  --shiki-token-function: var(--theme-accent);
+  --shiki-token-string-expression: var(--theme-green);
+  --shiki-token-punctuation: var(--theme-text-muted);
+  --shiki-token-link: var(--theme-accent);
+}
+</style>

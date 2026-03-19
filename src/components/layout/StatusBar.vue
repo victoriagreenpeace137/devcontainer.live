@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useTheme } from "../../composables/useTheme";
+import { URLS } from "../../constants/urls";
 
 defineProps<{
   version: string;
   cursorPos: { line: number; col: number };
   indentation: number;
+  indentEditable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +19,7 @@ const { themes, currentThemeId, currentTheme, showThemeMenu, setTheme } =
 
 const currentIndentName = (val: number) => {
   if (val === -1) return "Tabs";
-  return `Spaces: ${val}`;
+  return "Spaces";
 };
 </script>
 
@@ -92,13 +94,21 @@ const currentIndentName = (val: number) => {
       <div class="flex items-center gap-2 indent-selector relative">
         <button
           @click="
-            showThemeMenu = false;
-            $emit('toggleIndentMenu');
+            if (indentEditable) {
+              showThemeMenu = false;
+              $emit('toggleIndentMenu');
+            }
           "
-          class="flex items-center gap-1.5 hover:text-ide-accent transition-colors"
+          class="flex items-center gap-1.5 transition-colors"
+          :class="
+            indentEditable
+              ? 'hover:text-ide-accent cursor-pointer'
+              : 'opacity-40 cursor-default'
+          "
         >
           {{ currentIndentName(indentation) }}
           <svg
+            v-if="indentEditable"
             class="w-2.5 h-2.5 opacity-50 transition-transform"
             fill="none"
             viewBox="0 0 24 24"
@@ -118,7 +128,7 @@ const currentIndentName = (val: number) => {
 
       <span>UTF-8</span>
       <a
-        href="https://github.com/drehelis/devcontainer.live"
+        :href="URLS.REPO_URL"
         target="_blank"
         rel="noopener noreferrer"
         class="hover:text-ide-accent transition-colors flex items-center gap-1 group"
