@@ -1,11 +1,5 @@
 <script setup lang="ts">
-type Section =
-  | "general"
-  | "features"
-  | "ports"
-  | "history"
-  | "advanced"
-  | "presets";
+import type { Section } from "../../types";
 
 defineProps<{
   activeSection: Section;
@@ -128,15 +122,15 @@ defineEmits<{
       </svg>
     </div>
     <div
-      @click="$emit('update:activeSection', 'history')"
+      @click="$emit('update:activeSection', 'mounts')"
       class="activity-item group"
-      :class="{ active: activeSection === 'history' }"
+      :class="{ active: activeSection === 'mounts' }"
       title="Mounts"
     >
       <svg
         class="w-6 h-6"
         :class="
-          activeSection === 'history'
+          activeSection === 'mounts'
             ? 'text-ide-text-bright'
             : 'text-ide-text-muted group-hover:text-ide-text'
         "
