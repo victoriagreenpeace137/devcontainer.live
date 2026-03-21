@@ -1,23 +1,25 @@
 #!/bin/bash
 set -eo pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(dirname "$DIR")"
+readonly DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ROOT_DIR="$(dirname "$DIR")"
 mkdir -p "$ROOT_DIR/public/data"
-FEATURES_FILE="$ROOT_DIR/public/data/features.json"
-TEMPLATES_FILE="$ROOT_DIR/public/data/templates.json"
-IMAGE_TAGS_FILE="$ROOT_DIR/public/data/imageTags.json"
+readonly FEATURES_FILE="$ROOT_DIR/public/data/features.json"
+readonly TEMPLATES_FILE="$ROOT_DIR/public/data/templates.json"
+readonly IMAGE_TAGS_FILE="$ROOT_DIR/public/data/imageTags.json"
+
+deploy_skopeo() {
+    echo "Skopeo could not be found. Installing via apt-get..."
+    local apt_cmd="apt-get"
+    command -v sudo &> /dev/null && apt_cmd="sudo apt-get"
+    DEBIAN_FRONTEND=noninteractive $apt_cmd update && $apt_cmd install -y skopeo
+}
 
 if ! command -v skopeo &> /dev/null; then
-    echo "Skopeo could not be found. Installing via apt-get..."
-    if command -v sudo &> /dev/null; then
-        sudo apt-get update && sudo apt-get install -y skopeo
-    else
-        apt-get update && apt-get install -y skopeo
-    fi
+    deploy_skopeo
 fi
 
-TMP_DIR=$(mktemp -d)
+readonly TMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 echo "Fetching devcontainer index via skopeo..."
